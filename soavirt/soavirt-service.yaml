@@ -1,0 +1,24 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: soavirt-service
+spec:
+  selector:
+    tag: soavirt
+  type: NodePort
+  ports:
+    - name: http
+      protocol: TCP
+      port: 9080
+      targetPort: 9080
+      nodePort: 30980
+    - name: events
+      protocol: TCP
+      port: 9617
+      targetPort: 9617
+      nodePort: 30617
+    - name: statistics
+      protocol: TCP
+      port: 9618
+      targetPort: 9618
+      nodePort: 30618

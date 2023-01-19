@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: soavirt
+  labels:
+    tag: soavirt
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      tag: soavirt
+  serviceName: soavirt
+  template:
+    metadata:
+      labels:
+        tag: soavirt
+    spec:
+      volumes:
+      - name: soavirt-pv
+        hostPath:
+          path: "/minikube-host/parasoft/soavirt/pv"
+      - name: soavirt-config
+        configMap:
+          name: soavirt-config
+      containers:
+      - name: soavirt
+        image: parasoft/soavirt-server
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - name: soavirt-pv
+          mountPath: /usr/local/parasoft/soavirt/webapps/ROOT/workspace
+        - name: soavirt-config
+          mountPath: /usr/local/parasoft/soavirt/webapps/config.properties
+          subPath: config.properties
+        ports:
+        - name: http
+          containerPort: 9080
+        - name: events
+          containerPort: 9617
+        - name: statistics
+          containerPort: 9618
+        startupProbe:
+          httpGet:
+            path: /soavirt/api/v6/status?fields=machineId
+            port: 9080
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 30
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /soavirt/api/v6/status?fields=machineId
+            port: 9080
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /soavirt/api/v6/virtualAssets?fields=id
+            port: 9080
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 30
+        env:
+        - name: CATALINA_OPTS
+          value: "-Dparasoft.auto.deploy.new=false
+                   -Dparasoft.event.monitoring.broker.port=9617
+                   -Dparasoft.server.statistics.broker.port=9618"
